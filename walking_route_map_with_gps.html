@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_5e4690f7e224e9dfa020574c9269f127 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+<script>
+    function addCurrentLocation(map) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                const currentCoords = [position.coords.latitude, position.coords.longitude];
+                L.marker(currentCoords).addTo(map)
+                    .bindPopup('You are here')
+                    .openPopup();
+                map.setView(currentCoords, 14);
+            }, function (error) {
+                console.error("Geolocation error: ", error);
+                alert("Unable to retrieve your location. Please enable location services and try again.");
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const mapContainer = document.querySelector('.folium-map');
+        if (mapContainer && mapContainer._leaflet_map) {
+            const map = mapContainer._leaflet_map;
+            addCurrentLocation(map);
+        } else {
+            console.error("Map object not found. Ensure that the map is correctly initialized.");
+        }
+    });
+</script>
+    
+            <div class="folium-map" id="map_5e4690f7e224e9dfa020574c9269f127" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_5e4690f7e224e9dfa020574c9269f127 = L.map(
+                "map_5e4690f7e224e9dfa020574c9269f127",
+                {
+                    center: [35.70231552913249, 139.54365479775618],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 14,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_22447fca42dde74269991de15b40f8b4 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors", "detectRetina": false, "maxNativeZoom": 19, "maxZoom": 19, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            );
+        
+    
+            tile_layer_22447fca42dde74269991de15b40f8b4.addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+            var marker_e79e82adb71b3bbbc5d904cd3084be7a = L.marker(
+                [35.70231552913249, 139.54365479775618],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_8ce851904f0c3fb6d7c0022a25df1978 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_4530a0e09a857d2f0c549f13db571d51 = $(`<div id="html_4530a0e09a857d2f0c549f13db571d51" style="width: 100.0%; height: 100.0%;">武蔵境駅</div>`)[0];
+                popup_8ce851904f0c3fb6d7c0022a25df1978.setContent(html_4530a0e09a857d2f0c549f13db571d51);
+            
+        
+
+        marker_e79e82adb71b3bbbc5d904cd3084be7a.bindPopup(popup_8ce851904f0c3fb6d7c0022a25df1978)
+        ;
+
+        
+    
+    
+            var marker_8052241bcb7680e3a0b47883a54e965a = L.marker(
+                [35.70929902623397, 139.54061271232038],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_bcfd6748d62bc07f469f0cc516f40887 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_d1f668ad589b97195646567ccd7c6358 = $(`<div id="html_d1f668ad589b97195646567ccd7c6358" style="width: 100.0%; height: 100.0%;">境山野緑地</div>`)[0];
+                popup_bcfd6748d62bc07f469f0cc516f40887.setContent(html_d1f668ad589b97195646567ccd7c6358);
+            
+        
+
+        marker_8052241bcb7680e3a0b47883a54e965a.bindPopup(popup_bcfd6748d62bc07f469f0cc516f40887)
+        ;
+
+        
+    
+    
+            var marker_0022249d0f105a51d07b8a8fa980ded8 = L.marker(
+                [35.709455654854075, 139.54359342884686],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_8b65c621ab0a05f5623121b0bd166008 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_adbb02ed250a048ba1f53863601bd415 = $(`<div id="html_adbb02ed250a048ba1f53863601bd415" style="width: 100.0%; height: 100.0%;">国木田独歩の文学碑</div>`)[0];
+                popup_8b65c621ab0a05f5623121b0bd166008.setContent(html_adbb02ed250a048ba1f53863601bd415);
+            
+        
+
+        marker_0022249d0f105a51d07b8a8fa980ded8.bindPopup(popup_8b65c621ab0a05f5623121b0bd166008)
+        ;
+
+        
+    
+    
+            var marker_a8f38e3e7689f53b3cd9726f7dd22bcb = L.marker(
+                [35.71097118494865, 139.54456764876758],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_ca59dbb981ae9a9e6a1a2dd86d8fb61e = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_7ecdaad6e879c8ab30269417361cd3bb = $(`<div id="html_7ecdaad6e879c8ab30269417361cd3bb" style="width: 100.0%; height: 100.0%;">境浄水場</div>`)[0];
+                popup_ca59dbb981ae9a9e6a1a2dd86d8fb61e.setContent(html_7ecdaad6e879c8ab30269417361cd3bb);
+            
+        
+
+        marker_a8f38e3e7689f53b3cd9726f7dd22bcb.bindPopup(popup_ca59dbb981ae9a9e6a1a2dd86d8fb61e)
+        ;
+
+        
+    
+    
+            var marker_3c5c4a82f42685d4e879c8fa90bf4333 = L.marker(
+                [35.71320574586448, 139.54129568372184],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_b4e093c981b738f8658cca1da367c39e = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_1389b21ff4fd5f1118c734c10fc75315 = $(`<div id="html_1389b21ff4fd5f1118c734c10fc75315" style="width: 100.0%; height: 100.0%;">水の神殿</div>`)[0];
+                popup_b4e093c981b738f8658cca1da367c39e.setContent(html_1389b21ff4fd5f1118c734c10fc75315);
+            
+        
+
+        marker_3c5c4a82f42685d4e879c8fa90bf4333.bindPopup(popup_b4e093c981b738f8658cca1da367c39e)
+        ;
+
+        
+    
+    
+            var marker_aaa985644c6f2abc1b6d672e2db6364e = L.marker(
+                [35.71553707790316, 139.51253543137656],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_ba1aace36fd3caf7109f2d1915393dca = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_ff8d2be0d5737972ae2a445fb1e70767 = $(`<div id="html_ff8d2be0d5737972ae2a445fb1e70767" style="width: 100.0%; height: 100.0%;">江戸東京たてもの園</div>`)[0];
+                popup_ba1aace36fd3caf7109f2d1915393dca.setContent(html_ff8d2be0d5737972ae2a445fb1e70767);
+            
+        
+
+        marker_aaa985644c6f2abc1b6d672e2db6364e.bindPopup(popup_ba1aace36fd3caf7109f2d1915393dca)
+        ;
+
+        
+    
+    
+            var marker_98eab4df28986088a7cf3d4b92c6b853 = L.marker(
+                [35.7123484315674, 139.5261269217512],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_a9db6a860b19ad6f19f3404919bde189 = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_14e8c87876004aec1f84f4b6dd9f8e77 = $(`<div id="html_14e8c87876004aec1f84f4b6dd9f8e77" style="width: 100.0%; height: 100.0%;">梶野橋</div>`)[0];
+                popup_a9db6a860b19ad6f19f3404919bde189.setContent(html_14e8c87876004aec1f84f4b6dd9f8e77);
+            
+        
+
+        marker_98eab4df28986088a7cf3d4b92c6b853.bindPopup(popup_a9db6a860b19ad6f19f3404919bde189)
+        ;
+
+        
+    
+    
+            var marker_554c2106cb973e81d66118ec1282d089 = L.marker(
+                [35.701634527134935, 139.52389840980462],
+                {}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+    
+        var popup_f21297abe1d49cc640b0ebbef7abd82f = L.popup({"maxWidth": "100%"});
+
+        
+            
+                var html_f344a040fd5e3a617dc0de402447abc5 = $(`<div id="html_f344a040fd5e3a617dc0de402447abc5" style="width: 100.0%; height: 100.0%;">東小金井駅</div>`)[0];
+                popup_f21297abe1d49cc640b0ebbef7abd82f.setContent(html_f344a040fd5e3a617dc0de402447abc5);
+            
+        
+
+        marker_554c2106cb973e81d66118ec1282d089.bindPopup(popup_f21297abe1d49cc640b0ebbef7abd82f)
+        ;
+
+        
+    
+    
+            var poly_line_e30b0ea11cc50c0f41124ef73428f788 = L.polyline(
+                [[35.70231552913249, 139.54365479775618], [35.70929902623397, 139.54061271232038], [35.709455654854075, 139.54359342884686], [35.71097118494865, 139.54456764876758], [35.71320574586448, 139.54129568372184], [35.71553707790316, 139.51253543137656], [35.7123484315674, 139.5261269217512], [35.701634527134935, 139.52389840980462]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.7, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_5e4690f7e224e9dfa020574c9269f127);
+        
+</script>
+</html>
