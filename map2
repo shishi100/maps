@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSM with Custom Markers</title>
+    <!-- Link to Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh; /* Full screen height */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <!-- Link to Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        // Initialize the map and set the view to a default location
+        var map = L.map('map').setView([51.505, -0.09], 13);
+
+        // Add the OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Define a custom icon for the additional markers (e.g., blue color)
+        var blueIcon = L.icon({
+            iconUrl: 'https://chart.googleapis.com/chart?chst=d_map_pin_icon&chld=flag|00f', // Blue marker
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32],
+        });
+
+        // Function to add a marker with the custom color at a specified location
+        function addCustomMarker(lat, lon, message) {
+            L.marker([lat, lon], {icon: blueIcon}).addTo(map)
+                .bindPopup(message)
+                .openPopup();
+        }
+
+        // Add markers at specified lat/lon positions
+        var locations = [
+            { lat: 51.515, lon: -0.1, message: "Marker 1" },
+            { lat: 51.525, lon: -0.12, message: "Marker 2" },
+            { lat: 51.535, lon: -0.14, message: "Marker 3" }
+        ];
+
+        locations.forEach(function(location) {
+            addCustomMarker(location.lat, location.lon, location.message);
+        });
+
+        // Function to set the marker for the current GPS location
+        function showPosition(position) {
+            var lat = position.coords.latitude;
+            var lon = position.coords.longitude;
+            
+            // Update the map view to the current position
+            map.setView([lat, lon], 13);
+
+            // Add a marker at the current position (default red color)
+            L.marker([lat, lon]).addTo(map)
+                .bindPopup("You are here!")
+                .openPopup();
+        }
+
+        // Handle errors when accessing location
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+
+        // Request the current position from the browser
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition, showError);
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+    </script>
+
+</body>
+</html>
