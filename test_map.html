@@ -3,25 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM with Custom Markers</title>
+    <title>OSM with Custom Markers and Center Button</title>
     <!-- Link to Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         #map {
-            height: 100vh; /* Full screen height */
+            height: 90vh; /* Adjusted height to accommodate the button */
+        }
+        #centerButton {
+            position: absolute;
+            bottom: 10px;  /* Place it 10px from the bottom */
+            left: 10px;    /* Place it 10px from the left */
+            z-index: 1000; /* Ensures the button appears above the map */
+            background-color: white;
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
+    <!-- Add a button to center the map -->
+    <button id="centerButton">Center Map</button>
 
     <!-- Link to Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
     <script>
+        var currentLat, currentLon; // Variables to store current location
+
         // Initialize the map and set the view to a default location
-        var map = L.map('map').setView([35.68394148786027, 139.75361627438718], 15);
+        var map = L.map('map').setView([51.505, -0.09], 13);
 
         // Add the OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -46,9 +62,9 @@
 
         // Add markers at specified lat/lon positions
         var locations = [
-            { lat: 35.82220630775167, lon: 139.57509742330018, message: "志木駅" },
-            { lat: 35.826538756124144, lon: 139.57687660552517, message: "Marker 2" },
-            { lat: 35.82545548609713, lon: 139.5813127686938, message: "Custom Marker 3" }
+            { lat: 51.515, lon: -0.1, message: "Custom Marker 1" },
+            { lat: 51.525, lon: -0.12, message: "Custom Marker 2" },
+            { lat: 51.535, lon: -0.14, message: "Custom Marker 3" }
         ];
 
         locations.forEach(function(location) {
@@ -57,14 +73,14 @@
 
         // Function to set a circular marker for the current GPS location
         function showPosition(position) {
-            var lat = position.coords.latitude;
-            var lon = position.coords.longitude;
+            currentLat = position.coords.latitude;
+            currentLon = position.coords.longitude;
             
             // Update the map view to the current position
-            map.setView([lat, lon], 13);
+            map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
 
             // Add a red circle marker at the current position
-            L.circleMarker([lat, lon], {
+            L.circleMarker([currentLat, currentLon], {
                 radius: 10, // Size of the circle
                 color: 'red', // Circle border color
                 fillColor: '#f03', // Circle fill color
@@ -72,6 +88,15 @@
             }).addTo(map)
               .bindPopup("You are here!")
               .openPopup();
+        }
+
+        // Function to center the map on the current GPS location
+        function centerMap() {
+            if (currentLat && currentLon) {
+                map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
+            } else {
+                alert("Current location not available yet.");
+            }
         }
 
         // Handle errors when accessing location
@@ -98,6 +123,10 @@
         } else {
             alert("Geolocation is not supported by this browser.");
         }
+
+        // Add event listener to the button to center the map
+        document.getElementById("centerButton").addEventListener("click", centerMap);
+
     </script>
 
 </body>
