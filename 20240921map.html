@@ -82,7 +82,7 @@
             currentLon = position.coords.longitude;
             
             // Update the map view to the current position
-            map.setView([currentLat, currentLon], 13);
+            map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
 
             // Add a red circle marker at the current position
             L.circleMarker([currentLat, currentLon], {
@@ -98,7 +98,7 @@
         // Function to center the map on the current GPS location
         function centerMap() {
             if (currentLat && currentLon) {
-                map.setView([currentLat, currentLon], 13);
+                map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
             } else {
                 alert("Current location not available yet.");
             }
