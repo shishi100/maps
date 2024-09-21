@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM with Custom Markers and Center Button</title>
+    <title>OSM with Continuous Location Updates</title>
     <!-- Link to Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
@@ -35,9 +35,10 @@
 
     <script>
         var currentLat, currentLon; // Variables to store current location
+        var currentLocationMarker; // Marker for current location
 
         // Initialize the map and set the view to a default location
-        var map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
+        var map = L.map('map').setView([51.505, -0.09], 13);
 
         // Add the OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -62,37 +63,34 @@
 
         // Add markers at specified lat/lon positions
         var locations = [
-            { lat: 35.70210389544664, lon: 139.54364706983174, message: "武蔵境駅" },
-            { lat: 35.709201013576795, lon: 139.5406523146893, message: "境山野緑地" },
-            { lat: 35.709431109276345, lon: 139.54348944092482, message: "国木田独歩の文学碑" },
-            { lat: 35.710961759110326, lon: 139.54456539238808, message: "境浄水場" },
-            { lat: 35.713193762364924, lon: 139.5413182161585, message: "多摩湖自転車歩行者道" },
-            { lat: 35.715473892237604, lon: 139.5125570926187, message: "江戸東京たてもの園" },
-            { lat: 35.712417071927916, lon: 139.52604490116613, message: "梶野橋" },
-            { lat: 35.70158507835321, lon: 139.52391757927043, message: "東小金井駅" }
+            { lat: 51.515, lon: -0.1, message: "Custom Marker 1" },
+            { lat: 51.525, lon: -0.12, message: "Custom Marker 2" },
+            { lat: 51.535, lon: -0.14, message: "Custom Marker 3" }
         ];
 
         locations.forEach(function(location) {
             addCustomMarker(location.lat, location.lon, location.message);
         });
 
-        // Function to set a circular marker for the current GPS location
-        function showPosition(position) {
+        // Function to update the map with the current GPS location
+        function updatePosition(position) {
             currentLat = position.coords.latitude;
             currentLon = position.coords.longitude;
-            
-            // Update the map view to the current position
-            map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
 
-            // Add a red circle marker at the current position
-            L.circleMarker([currentLat, currentLon], {
-                radius: 10, // Size of the circle
-                color: 'red', // Circle border color
-                fillColor: '#f03', // Circle fill color
-                fillOpacity: 0.5 // Opacity of the fill
-            }).addTo(map)
-              .bindPopup("You are here!")
-              .openPopup();
+            // If a current location marker already exists, update its position
+            if (currentLocationMarker) {
+                currentLocationMarker.setLatLng([currentLat, currentLon]);
+            } else {
+                // If no current location marker, create one
+                currentLocationMarker = L.circleMarker([currentLat, currentLon], {
+                    radius: 10, // Size of the circle
+                    color: 'red', // Circle border color
+                    fillColor: '#f03', // Circle fill color
+                    fillOpacity: 0.5 // Opacity of the fill
+                }).addTo(map)
+                .bindPopup("You are here!")
+                .openPopup();
+            }
         }
 
         // Function to center the map on the current GPS location
@@ -122,9 +120,13 @@
             }
         }
 
-        // Request the current position from the browser
+        // Continuously track the current position
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition, showError);
+            navigator.geolocation.watchPosition(updatePosition, showError, {
+                enableHighAccuracy: true, // Use GPS if available
+                maximumAge: 0,            // Don't use cached location
+                timeout: 5000             // Wait up to 5 seconds for a response
+            });
         } else {
             alert("Geolocation is not supported by this browser.");
         }
