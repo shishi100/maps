@@ -38,7 +38,7 @@
         var currentLocationMarker; // Marker for current location
 
         // Initialize the map and set the view to a default location
-        var map = L.map('map').setView([51.505, -0.09], 13);
+        var map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
 
         // Add the OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -63,9 +63,14 @@
 
         // Add markers at specified lat/lon positions
         var locations = [
-            { lat: 51.515, lon: -0.1, message: "Custom Marker 1" },
-            { lat: 51.525, lon: -0.12, message: "Custom Marker 2" },
-            { lat: 51.535, lon: -0.14, message: "Custom Marker 3" }
+            { lat: 35.70210389544664, lon: 139.54364706983174, message: "武蔵境駅" },
+            { lat: 35.709201013576795, lon: 139.5406523146893, message: "境山野緑地" },
+            { lat: 35.709431109276345, lon: 139.54348944092482, message: "国木田独歩の文学碑" },
+            { lat: 35.710961759110326, lon: 139.54456539238808, message: "境浄水場" },
+            { lat: 35.713193762364924, lon: 139.5413182161585, message: "多摩湖自転車歩行者道" },
+            { lat: 35.715473892237604, lon: 139.5125570926187, message: "江戸東京たてもの園" },
+            { lat: 35.712417071927916, lon: 139.52604490116613, message: "梶野橋" },
+            { lat: 35.70158507835321, lon: 139.52391757927043, message: "東小金井駅" }
         ];
 
         locations.forEach(function(location) {
