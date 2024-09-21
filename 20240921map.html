@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM with Custom Markers and Center Button</title>
+    <title>OSM with Continuous Location Updates</title>
     <!-- Link to Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
@@ -35,6 +35,7 @@
 
     <script>
         var currentLat, currentLon; // Variables to store current location
+        var currentLocationMarker; // Marker for current location
 
         // Initialize the map and set the view to a default location
         var map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
@@ -76,23 +77,25 @@
             addCustomMarker(location.lat, location.lon, location.message);
         });
 
-        // Function to set a circular marker for the current GPS location
-        function showPosition(position) {
+        // Function to update the map with the current GPS location
+        function updatePosition(position) {
             currentLat = position.coords.latitude;
             currentLon = position.coords.longitude;
-            
-            // Update the map view to the current position
-            map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
 
-            // Add a red circle marker at the current position
-            L.circleMarker([currentLat, currentLon], {
-                radius: 10, // Size of the circle
-                color: 'red', // Circle border color
-                fillColor: '#f03', // Circle fill color
-                fillOpacity: 0.5 // Opacity of the fill
-            }).addTo(map)
-              .bindPopup("You are here!")
-              .openPopup();
+            // If a current location marker already exists, update its position
+            if (currentLocationMarker) {
+                currentLocationMarker.setLatLng([currentLat, currentLon]);
+            } else {
+                // If no current location marker, create one
+                currentLocationMarker = L.circleMarker([currentLat, currentLon], {
+                    radius: 10, // Size of the circle
+                    color: 'red', // Circle border color
+                    fillColor: '#f03', // Circle fill color
+                    fillOpacity: 0.5 // Opacity of the fill
+                }).addTo(map)
+                .bindPopup("You are here!")
+                .openPopup();
+            }
         }
 
         // Function to center the map on the current GPS location
@@ -122,9 +125,13 @@
             }
         }
 
-        // Request the current position from the browser
+        // Continuously track the current position
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition, showError);
+            navigator.geolocation.watchPosition(updatePosition, showError, {
+                enableHighAccuracy: true, // Use GPS if available
+                maximumAge: 0,            // Don't use cached location
+                timeout: 5000             // Wait up to 5 seconds for a response
+            });
         } else {
             alert("Geolocation is not supported by this browser.");
         }
