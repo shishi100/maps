@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM with Continuous Location Updates</title>
+    <title>OSM with Continuous Location and Auto-Centering</title>
     <!-- Link to Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
@@ -36,6 +36,7 @@
     <script>
         var currentLat, currentLon; // Variables to store current location
         var currentLocationMarker; // Marker for current location
+        var mapIsCentered = true;  // Flag to check if the map should be auto-centered
 
         // Initialize the map and set the view to a default location
         var map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
@@ -72,7 +73,7 @@
             { lat: 35.712417071927916, lon: 139.52604490116613, message: "梶野橋" },
             { lat: 35.70158507835321, lon: 139.52391757927043, message: "東小金井駅" }
         ];
-
+        
         locations.forEach(function(location) {
             addCustomMarker(location.lat, location.lon, location.message);
         });
@@ -96,9 +97,14 @@
                 .bindPopup("You are here!")
                 .openPopup();
             }
+
+            // Auto-center the map if the map is set to auto-center
+            if (mapIsCentered) {
+                map.setView([currentLat, currentLon], map.getZoom());
+            }
         }
 
-        // Function to center the map on the current GPS location
+        // Function to center the map on the current GPS location manually
         function centerMap() {
             if (currentLat && currentLon) {
                 map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
@@ -136,8 +142,11 @@
             alert("Geolocation is not supported by this browser.");
         }
 
-        // Add event listener to the button to center the map
-        document.getElementById("centerButton").addEventListener("click", centerMap);
+        // Add event listener to the button to center the map manually and disable auto-centering
+        document.getElementById("centerButton").addEventListener("click", function() {
+            centerMap();
+            mapIsCentered = false; // Disable auto-centering after manual interaction
+        });
 
     </script>
 
