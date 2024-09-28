@@ -3,6 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSM with Toggle Auto-Centering</title>
+    <!-- Link to Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 90vh; /* Adjusted height to accommodate the button */
+        }
+        #centerButton {
+            position: absolute;
+            bottom: 10px;  /* Place it 10px from the bottom */
+            left: 10px;    /* Place it 10px from the left */
+            z-index: 1000; /* Ensures the button appears above the map */
+            background-color: white;
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <!-- Add a button to toggle auto-centering -->
+    <button id="centerButton">Disable Auto-Centering</button>
+
+    <!-- Link to Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        var currentLat, currentLon; // Variables to store current location
+        var currentLocationMarker; // Marker for current location
+        var mapIsCentered = true;  // Flag to check if the map should be auto-centered
+
+        // Initialize the map and set the view to a default location
+        var map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
+
+        // Add the OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Define a custom blue icon for the additional markers
+        var blueIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', // Blue marker URL
+            iconSize: [25, 41], // Size of the icon
+            iconAnchor: [12, 41], // Point of the icon which will correspond to marker's location
+            popupAnchor: [1, -34], // Where the popup should open relative to the iconAnchor
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.4/images/marker-shadow.png', // Shadow of the icon
+            shadowSize: [41, 41]  // Size of the shadow
+        });
+
+        // Function to add a custom marker with the blue color at a specified location
+        function addCustomMarker(lat, lon, message) {
+            L.marker([lat, lon], {icon: blueIcon}).addTo(map)
+                .bindPopup(message);
+        }
+
+        // Add markers at specified lat/lon positions
+        var locations = [
+            { lat: 35.822193746616854, lon: 139.57531123281584, message: "志木駅" },
+            { lat: 35.826072023718645, lon: 139.57570503389806, message: "志木郵便局" },
+            { lat: 35.82424175302552, lon: 139.57842316800944, message: "慶應義塾志木高校" }
+        ];
+
+        locations.forEach(function(location) {
+            addCustomMarker(location.lat, location.lon, location.message);
+        });
+
+        // Function to update the map with the current GPS location
+        function updatePosition(position) {
+            currentLat = position.coords.latitude;
+            currentLon = position.coords.longitude;
+
+            // If a current location marker already exists, update its position
+            if (currentLocationMarker) {
+                currentLocationMarker.setLatLng([currentLat, currentLon]);
+            } else {
+                // If no current location marker, create one
+                currentLocationMarker = L.circleMarker([currentLat, currentLon], {
+                    radius: 10, // Size of the circle
+                    color: 'red', // Circle border color
+                    fillColor: '#f03', // Circle fill color
+                    fillOpacity: 0.5 // Opacity of the fill
+                }).addTo(map)
+                .bindPopup("You are here!")
+                .openPopup();
+            }
+
+            // Auto-center the map if auto-centering is enabled
+            if (mapIsCentered) {
+                map.setView([currentLat, currentLon], map.getZoom());
+            }
+        }
+
+        // Function to toggle auto-centering on and off
+        function toggleCentering() {
+            mapIsCentered = !mapIsCentered; // Toggle the state
+
+            // Update the button text based on the current state
+            var button = document.getElementById("centerButton");
+            if (mapIsCentered) {
+                button.textContent = "Disable Auto-Centering";
+                map.setView([currentLat, currentLon], map.getZoom()); // Re-center the map immediately
+            } else {
+                button.textContent = "Enable Auto-Centering";
+            }
+        }
+
+        // Handle errors when accessing location
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+
+        // Continuously track the current position
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(updatePosition, showError, {
+                enableHighAccuracy: true, // Use GPS if available
+                maximumAge: 0,            // Don't use cached location
+                timeout: 5000             // Wait up to 5 seconds for a response
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+
+        // Add event listener to the button to toggle auto-centering
+        document.getElementById("centerButton").addEventListener("click", toggleCentering);
+
+    </script>
+
+</body>
+</html>
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSM with Continuous Location and Auto-Centering</title>
     <!-- Link to Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
