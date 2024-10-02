@@ -61,10 +61,10 @@
             shadowSize: [41, 41]  // Size of the shadow
         });
 
-        // Function to add a custom marker with the blue color at a specified location
+        // Function to add a custom marker with the blue color and larger text
         function addCustomMarker(lat, lon, message) {
             L.marker([lat, lon], {icon: blueIcon}).addTo(map)
-                .bindPopup(message);
+                .bindPopup('<div class="large-popup-text">' + message + '</div>'); // Add the CSS class to enlarge text
         }
 
         // Add markers at specified lat/lon positions
