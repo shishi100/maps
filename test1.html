@@ -22,11 +22,6 @@
             cursor: pointer;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
         }
-        /* Custom styling for popup text */
-        .large-popup-text {
-            font-size: 18px; /* You can adjust the size as needed */
-            font-weight: bold; /* Optionally make it bold */
-        }
     </style>
 </head>
 <body>
@@ -44,7 +39,7 @@
         var mapIsCentered = true;  // Flag to check if the map should be auto-centered
 
         // Initialize the map and set the view to a default location
-        var map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
+        var map = L.map('map').setView([51.505, -0.09], 13);
 
         // Add the OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -61,33 +56,17 @@
             shadowSize: [41, 41]  // Size of the shadow
         });
 
-        // Function to add a custom marker with the blue color and larger text
+        // Function to add a custom marker with the blue color at a specified location
         function addCustomMarker(lat, lon, message) {
             L.marker([lat, lon], {icon: blueIcon}).addTo(map)
-                .bindPopup('<div class="large-popup-text">' + message + '</div>'); // Add the CSS class to enlarge text
+                .bindPopup(message);
         }
 
         // Add markers at specified lat/lon positions
         var locations = [
-            { lat: 35.6288362818816, lon: 139.737958220102, message: "品川駅高輪口" },
-            { lat: 35.62454871022875, lon: 139.73877549811152, message: "八ツ山橋" },
-            { lat: 35.62243860276713, lon: 139.74005539708395, message: "土蔵相模跡" }
-            { lat: 35.62206401227418, lon: 139.74164896383883, message: "品川浦船留り" }
-            { lat: 35.62144687222184, lon: 139.7423301187696, message: "利田神社（鯨塚）" }
-            { lat: 35.620043376774326, lon: 139.74132311173403, message: "法禅寺" }
-            { lat: 35.620389636182814, lon: 139.74070570732505, message: "善福寺" }
-            { lat: 35.61911015458133, lon: 139.74241009037524, message: "養願寺" }
-            { lat: 35.61941514306853, lon: 139.74299355215393, message: "一心寺" }
-            { lat: 35.61874040497736, lon: 139.74251946829165, message: "正徳寺" }
-            { lat: 35.61904706683028, lon: 139.74423991354917, message: "聖蹟公園" } 
-            { lat: 35.618528196131784, lon: 139.73970232387376, message: "品川神社" }
-            { lat: 35.61780886984935, lon: 139.74022240310242, message: "清徳寺" } 
-            { lat: 35.61719980283756, lon: 139.7433950768542, message: "荏原神社" }
-            { lat: 35.61631408175983, lon: 139.74296346585115, message: "海徳寺" }
-            { lat: 35.61548598998635, lon: 139.73861371973476, message: "清光院" }
-            { lat: 35.616345106783314, lon: 139.7388977167523, message: "東海寺" } 
-            { lat: 35.61776963586371, lon: 139.73642053380698, message: "大山墓地" }
-            { lat: 35.620008231699806, lon: 139.72818920489607, message: "大崎駅" }
+            { lat: 51.515, lon: -0.1, message: "Custom Marker 1" },
+            { lat: 51.525, lon: -0.12, message: "Custom Marker 2" },
+            { lat: 51.535, lon: -0.14, message: "Custom Marker 3" }
         ];
 
         locations.forEach(function(location) {
