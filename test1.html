@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM with Continuous Location and Auto-Centering</title>
+    <title>OSM with Continuous Location Updates</title>
     <!-- Link to Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
@@ -36,7 +36,6 @@
     <script>
         var currentLat, currentLon; // Variables to store current location
         var currentLocationMarker; // Marker for current location
-        var mapIsCentered = true;  // Flag to check if the map should be auto-centered
 
         // Initialize the map and set the view to a default location
         var map = L.map('map').setView([51.505, -0.09], 13);
@@ -92,14 +91,9 @@
                 .bindPopup("You are here!")
                 .openPopup();
             }
-
-            // Auto-center the map if the map is set to auto-center
-            if (mapIsCentered) {
-                map.setView([currentLat, currentLon], map.getZoom());
-            }
         }
 
-        // Function to center the map on the current GPS location manually
+        // Function to center the map on the current GPS location
         function centerMap() {
             if (currentLat && currentLon) {
                 map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
@@ -137,11 +131,8 @@
             alert("Geolocation is not supported by this browser.");
         }
 
-        // Add event listener to the button to center the map manually and disable auto-centering
-        document.getElementById("centerButton").addEventListener("click", function() {
-            centerMap();
-            mapIsCentered = false; // Disable auto-centering after manual interaction
-        });
+        // Add event listener to the button to center the map
+        document.getElementById("centerButton").addEventListener("click", centerMap);
 
     </script>
 
