@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM with Toggle Auto-Centering</title>
+    <title>OSM with Continuous Location and Auto-Centering</title>
     <!-- Link to Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
@@ -27,8 +27,8 @@
 <body>
 
     <div id="map"></div>
-    <!-- Add a button to toggle auto-centering -->
-    <button id="centerButton">Disable Auto-Centering</button>
+    <!-- Add a button to center the map -->
+    <button id="centerButton">Center Map</button>
 
     <!-- Link to Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -93,23 +93,18 @@
                 .openPopup();
             }
 
-            // Auto-center the map if auto-centering is enabled
+            // Auto-center the map if the map is set to auto-center
             if (mapIsCentered) {
                 map.setView([currentLat, currentLon], map.getZoom());
             }
         }
 
-        // Function to toggle auto-centering on and off
-        function toggleCentering() {
-            mapIsCentered = !mapIsCentered; // Toggle the state
-
-            // Update the button text based on the current state
-            var button = document.getElementById("centerButton");
-            if (mapIsCentered) {
-                button.textContent = "Disable Auto-Centering";
-                map.setView([currentLat, currentLon], map.getZoom()); // Re-center the map immediately
+        // Function to center the map on the current GPS location manually
+        function centerMap() {
+            if (currentLat && currentLon) {
+                map.setView([currentLat, currentLon], map.getZoom()); // Keep current zoom level
             } else {
-                button.textContent = "Enable Auto-Centering";
+                alert("Current location not available yet.");
             }
         }
 
@@ -142,8 +137,11 @@
             alert("Geolocation is not supported by this browser.");
         }
 
-        // Add event listener to the button to toggle auto-centering
-        document.getElementById("centerButton").addEventListener("click", toggleCentering);
+        // Add event listener to the button to center the map manually and disable auto-centering
+        document.getElementById("centerButton").addEventListener("click", function() {
+            centerMap();
+            mapIsCentered = false; // Disable auto-centering after manual interaction
+        });
 
     </script>
 
