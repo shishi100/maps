@@ -127,10 +127,10 @@
             // Update the button text based on the current state
             var button = document.getElementById("centerButton");
             if (mapIsCentered) {
-                button.textContent = "現在地：自由な位置に表示する";
+                button.textContent = "現在地：地図中心に表示中";
                 map.setView([currentLat, currentLon], map.getZoom()); // Re-center the map immediately
             } else {
-                button.textContent = "現在地：地図中心に表示する";
+                button.textContent = "現在地：自由位置に表示中";
             }
         }
 
