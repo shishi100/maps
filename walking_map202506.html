@@ -1,1 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSM with Toggle Auto-Centering</title>
+    <!-- Link to Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 90vh; /* Adjusted height to accommodate the button */
+        }
+        #centerButton {
+            position: absolute;
+            bottom: 10px;  /* Place it 10px from the bottom */
+            left: 10px;    /* Place it 10px from the left */
+            z-index: 1000; /* Ensures the button appears above the map */
+            background-color: white;
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        /* Custom styling for popup text */
+        .large-popup-text {
+            font-size: 18px; /* You can adjust the size as needed */
+            font-weight: bold; /* Optionally make it bold */
+        }
+    </style>
+</head>
+<body>
 
+    <div id="map"></div>
+    <!-- Add a button to toggle auto-centering -->
+    <button id="centerButton">現在地を地図中心に表示中</button>
+
+    <!-- Link to Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        var currentLat, currentLon; // Variables to store current location
+        var currentLocationMarker; // Marker for current location
+        var mapIsCentered = true;  // Flag to check if the map should be auto-centered
+
+        // Initialize the map and set the view to a default location
+        var map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
+
+        // Add the OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Define a custom blue icon for the additional markers
+        var blueIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', // Blue marker URL
+            iconSize: [25, 41], // Size of the icon
+            iconAnchor: [12, 41], // Point of the icon which will correspond to marker's location
+            popupAnchor: [1, -34], // Where the popup should open relative to the iconAnchor
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.4/images/marker-shadow.png', // Shadow of the icon
+            shadowSize: [41, 41]  // Size of the shadow
+        });
+
+        // Function to add a custom marker with the blue color and larger text
+        function addCustomMarker(lat, lon, message) {
+            L.marker([lat, lon], {icon: blueIcon}).addTo(map)
+                .bindPopup('<div class="large-popup-text">' + message + '</div>'); // Add the CSS class to enlarge text
+        }
+
+        // Add markers at specified lat/lon positions
+        var locations = [
+            { lat: 35.72187934362693, lon: 139.7520587116603, message: "都営三田線白山駅" },
+            { lat: 35.72380140397949, lon: 139.74840289870403, message: "白山5丁目児童遊園" },
+            { lat: 35.72256200891729, lon: 139.75224646341692, message: "妙清寺" },
+            { lat: 35.72186042092088, lon: 139.7506072373258, message: "白山神社" },
+            { lat: 35.72073416355731, lon: 139.7525771858214, message: "円乗寺" },
+            { lat: 35.72170029562479, lon: 139.7537966420265, message: "大円寺" },
+            { lat: 35.722416515593764, lon: 139.75649233828102, message: "海蔵寺" },
+            { lat: 35.723927703647874, lon: 139.75501613395818, message: "栄松院" },
+            { lat: 35.72475819251789, lon: 139.75467411747425, message: "高林寺" },
+            { lat: 35.72444937994012, lon: 139.75358802935796, message: "駒込土物店跡（天栄寺）" },
+            { lat: 35.72483820657785, lon: 139.75232753911635, message: "龍光寺" },
+            { lat: 35.726197130958475, lon: 139.75283980238171, message: "南谷寺" },
+            { lat: 35.72826303382233, lon: 139.7544812050479, message: "吉祥寺" },
+            { lat: 35.731215008972285, lon: 139.7511837189373, message: "駒込富士神社" },
+            { lat: 35.736586866856776, lon: 139.74701133559333, message: "駒込駅" }
+        ];
+
+        locations.forEach(function(location) {
+            addCustomMarker(location.lat, location.lon, location.message);
+        });
+
+        // Function to update the map with the current GPS location
+        function updatePosition(position) {
+            currentLat = position.coords.latitude;
+            currentLon = position.coords.longitude;
+
+            // If a current location marker already exists, update its position
+            if (currentLocationMarker) {
+                currentLocationMarker.setLatLng([currentLat, currentLon]);
+            } else {
+                // If no current location marker, create one
+                currentLocationMarker = L.circleMarker([currentLat, currentLon], {
+                    radius: 10, // Size of the circle
+                    color: 'red', // Circle border color
+                    fillColor: '#f03', // Circle fill color
+                    fillOpacity: 0.5 // Opacity of the fill
+                }).addTo(map)
+//                .bindPopup("現在地")
+//                .openPopup();
+            }
+
+            // Auto-center the map if auto-centering is enabled
+            if (mapIsCentered) {
+                map.setView([currentLat, currentLon], map.getZoom());
+            }
+        }
+
+        // Function to toggle auto-centering on and off
+        function toggleCentering() {
+            mapIsCentered = !mapIsCentered; // Toggle the state
+
+            // Update the button text based on the current state
+            var button = document.getElementById("centerButton");
+            if (mapIsCentered) {
+                button.textContent = "現在地を地図中心に表示中";
+                map.setView([currentLat, currentLon], map.getZoom()); // Re-center the map immediately
+            } else {
+                button.textContent = "現在地は自由に動かせます";
+            }
+        }
+
+        // Handle errors when accessing location
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+
+        // Continuously track the current position
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(updatePosition, showError, {
+                enableHighAccuracy: true, // Use GPS if available
+                maximumAge: 0,            // Don't use cached location
+                timeout: 5000             // Wait up to 5 seconds for a response
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+
+        // Add event listener to the button to toggle auto-centering
+        document.getElementById("centerButton").addEventListener("click", toggleCentering);
+
+    </script>
+
+</body>
+</html>
