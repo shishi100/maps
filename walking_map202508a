@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OSM with Toggle Auto-Centering + Heading Arrow</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+  <style>
+    #map { height: 90vh; }
+    #centerButton {
+      position: absolute; bottom: 10px; left: 10px; z-index: 1000;
+      background-color: white; border: none; padding: 10px; font-size: 16px;
+      cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,.3);
+    }
+    .large-popup-text { font-size: 18px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <button id="centerButton">現在地を地図中心に表示中</button>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    let currentLat, currentLon;
+    let prevLat, prevLon;
+    let currentLocationMarker;        // red circle
+    let directionLayer;               // LayerGroup for the arrow (line + head)
+    let mapIsCentered = true;
+
+    // Init map
+    const map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
+
+    // OSM tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    // Blue icon for landmarks
+    const blueIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      iconSize: [25,41], iconAnchor: [12,41], popupAnchor: [1,-34],
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.4/images/marker-shadow.png',
+      shadowSize: [41,41]
+    });
+
+    function addCustomMarker(lat, lon, message) {
+      L.marker([lat, lon], {icon: blueIcon}).addTo(map)
+        .bindPopup('<div class="large-popup-text">'+message+'</div>');
+    }
+
+    // Landmarks
+    const locations = [
+      { lat: 35.643515299803745, lon: 139.6714480882014, message: "1:三軒茶屋駅南口" },
+      { lat: 35.638311553908714, lon: 139.680707828259, message: "2:駒繋神社" },
+      { lat: 35.64374436406362, lon: 139.6815532998503, message: "3;世田谷公園" },
+      { lat: 35.649312446263814, lon: 139.6701072773502, message: "4:円泉寺" },
+      { lat: 35.64927656029933, lon: 139.67013524022767, message: "5:林芙美子旧居跡" },
+      { lat: 35.64485865672738, lon: 139.66830145741037, message: "6:目青不動尊" },
+      { lat: 35.64711090238403, lon: 139.66530173886076, message: "7:太子堂八幡神社" },
+      { lat: 35.64370960120265, lon: 139.66929199890888, message: "8:キャロットタワー" }
+    ];
+    locations.forEach(loc => addCustomMarker(loc.lat, loc.lon, loc.message));
+
+    // --- Geo helpers (no plugins) ---
+    const R = 6371000; // Earth radius (m)
+    const toRad = d => d * Math.PI / 180;
+    const toDeg = r => r * 180 / Math.PI;
+
+    function haversineMeters(lat1, lon1, lat2, lon2) {
+      const φ1 = toRad(lat1), φ2 = toRad(lat2);
+      const dφ = toRad(lat2 - lat1), dλ = toRad(lon2 - lon1);
+      const a = Math.sin(dφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(dλ/2)**2;
+      return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+    }
+
+    // Initial bearing from point 1 -> point 2 (degrees, 0°=North, clockwise)
+    function bearingBetween(lat1, lon1, lat2, lon2) {
+      const φ1 = toRad(lat1), φ2 = toRad(lat2);
+      const Δλ = toRad(lon2 - lon1);
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+      let θ = Math.atan2(y, x);
+      θ = (toDeg(θ) + 360) % 360;
+      return θ;
+    }
+
+    // Destination point given start, bearing (deg), distance (m)
+    function destinationPoint(lat, lon, bearingDeg, dist) {
+      const δ = dist / R;
+      const θ = toRad(bearingDeg);
+      const φ1 = toRad(lat);
+      const λ1 = toRad(lon);
+
+      const φ2 = Math.asin(Math.sin(φ1)*Math.cos(δ) + Math.cos(φ1)*Math.sin(δ)*Math.cos(θ));
+      const λ2 = λ1 + Math.atan2(Math.sin(θ)*Math.sin(δ)*Math.cos(φ1), Math.cos(δ) - Math.sin(φ1)*Math.sin(φ2));
+
+      return [toDeg(φ2), (toDeg(λ2)+540)%360-180]; // normalize lon to [-180,180]
+    }
+
+    // Draw or update the direction arrow ahead of the current location
+    function updateDirectionArrow(lat, lon, prevLat, prevLon) {
+      // Remove previous arrow
+      if (directionLayer) {
+        map.removeLayer(directionLayer);
+        directionLayer = null;
+      }
+
+      const moved = haversineMeters(prevLat, prevLon, lat, lon);
+      if (!isFinite(moved) || moved < 1) return; // ignore jitter
+
+      const brg = bearingBetween(prevLat, prevLon, lat, lon);
+
+      // Arrow geometry
+      const shaftLen = 25;  // meters
+      const headLen  = 8;   // meters
+      const headHalf = 5;   // meters, half-width of head base
+
+      // Compute points
+      const tip      = destinationPoint(lat, lon, brg, shaftLen + headLen);
+      const shaftEnd = destinationPoint(lat, lon, brg, shaftLen);
+
+      // Head base left/right (±90° from bearing) at the shaft end
+      const leftBase  = destinationPoint(shaftEnd[0], shaftEnd[1], (brg + 270) % 360, headHalf);
+      const rightBase = destinationPoint(shaftEnd[0], shaftEnd[1], (brg + 90) % 360, headHalf);
+
+      // Build layers
+      const shaft = L.polyline([[lat, lon], shaftEnd], { weight: 4, color: 'red', opacity: 0.9 });
+      const head  = L.polygon([leftBase, tip, rightBase], { color: 'red', fillColor: 'red', fillOpacity: 0.8, weight: 1 });
+
+      directionLayer = L.layerGroup([shaft, head]).addTo(map);
+
+      // Optional: show bearing in degrees on click
+      directionLayer.bindTooltip(`${Math.round(brg)}°`, { permanent: false });
+    }
+
+    // Update with current GPS location
+    function updatePosition(position) {
+      currentLat = position.coords.latitude;
+      currentLon = position.coords.longitude;
+
+      // Update/make the red circle marker
+      if (currentLocationMarker) {
+        currentLocationMarker.setLatLng([currentLat, currentLon]);
+      } else {
+        currentLocationMarker = L.circleMarker([currentLat, currentLon], {
+          radius: 10, color: 'red', fillColor: '#f03', fillOpacity: 0.5
+        }).addTo(map);
+      }
+
+      // Auto-center if enabled
+      if (mapIsCentered) map.setView([currentLat, currentLon], map.getZoom());
+
+      // Draw/update heading arrow once we have a previous point
+      if (prevLat !== undefined && prevLon !== undefined) {
+        updateDirectionArrow(currentLat, currentLon, prevLat, prevLon);
+      }
+
+      // Save as previous for next update
+      prevLat = currentLat; prevLon = currentLon;
+    }
+
+    function toggleCentering() {
+      mapIsCentered = !mapIsCentered;
+      const button = document.getElementById("centerButton");
+      if (mapIsCentered) {
+        button.textContent = "現在地を地図中心に表示中";
+        if (currentLat !== undefined && currentLon !== undefined) {
+          map.setView([currentLat, currentLon], map.getZoom());
+        }
+      } else {
+        button.textContent = "現在地は自由に動かせます";
+      }
+    }
+
+    function showError(error) {
+      switch (error.code) {
+        case error.PERMISSION_DENIED: alert("User denied the request for Geolocation."); break;
+        case error.POSITION_UNAVAILABLE: alert("Location information is unavailable."); break;
+        case error.TIMEOUT: alert("The request to get user location timed out."); break;
+        default: alert("An unknown error occurred."); break;
+      }
+    }
+
+    // Start tracking
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(updatePosition, showError, {
+        enableHighAccuracy: true, maximumAge: 0, timeout: 5000
+      });
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+
+    document.getElementById("centerButton").addEventListener("click", toggleCentering);
+  </script>
+</body>
+</html>
