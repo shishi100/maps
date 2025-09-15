@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OSM + Compass Heading Arrow</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+  <style>
+    #map { height: 90vh; }
+    #centerButton, #compassButton, #headingBadge {
+      position: absolute; z-index: 1000; background: white;
+      border: none; padding: 10px; font-size: 16px; cursor: pointer;
+      box-shadow: 2px 2px 5px rgba(0,0,0,.3);
+    }
+    #centerButton { bottom: 10px; left: 10px; }
+    #compassButton { bottom: 10px; left: 250px; }
+    #headingBadge {
+      top: 10px; right: 10px; font-size: 14px; cursor: default;
+      padding: 6px 10px; border-radius: 8px;
+    }
+    .large-popup-text { font-size: 18px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <button id="centerButton">現在地を地図中心に表示中</button>
+  <button id="compassButton">📍 コンパス有効化</button>
+  <div id="headingBadge" aria-live="polite">Heading: --°</div>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    // --- State ---
+    let currentLat, currentLon;
+    let prevLat, prevLon; // not used for compass, kept for potential fallbacks
+    let currentLocationMarker;   // red circle marker
+    let directionLayer;          // arrow layer
+    let mapIsCentered = true;
+    let compassActive = false;
+    let lastHeadingDeg;          // most recent compass heading
+    let headingSmoothing = null; // for low-pass smoothing
+
+    // --- Map init ---
+    const map = L.map('map').setView([35.70210389544664, 139.54364706983174], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    // --- Blue icon for landmarks ---
+    const blueIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      iconSize: [25,41], iconAnchor: [12,41], popupAnchor: [1,-34],
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.4/images/marker-shadow.png',
+      shadowSize: [41,41]
+    });
+
+    function addCustomMarker(lat, lon, message) {
+      L.marker([lat, lon], {icon: blueIcon}).addTo(map)
+        .bindPopup('<div class="large-popup-text">'+message+'</div>');
+    }
+
+    // --- Landmarks ---
+    const locations = [
+      { lat: 35.643515299803745, lon: 139.6714480882014, message: "1:三軒茶屋駅南口" },
+      { lat: 35.638311553908714, lon: 139.680707828259, message: "2:駒繋神社" },
+      { lat: 35.64374436406362, lon: 139.6815532998503, message: "3;世田谷公園" },
+      { lat: 35.649312446263814, lon: 139.6701072773502, message: "4:円泉寺" },
+      { lat: 35.64927656029933, lon: 139.67013524022767, message: "5:林芙美子旧居跡" },
+      { lat: 35.64485865672738, lon: 139.66830145741037, message: "6:目青不動尊" },
+      { lat: 35.64711090238403, lon: 139.66530173886076, message: "7:太子堂八幡神社" },
+      { lat: 35.64370960120265, lon: 139.66929199890888, message: "8:キャロットタワー" }
+    ];
+    locations.forEach(loc => addCustomMarker(loc.lat, loc.lon, loc.message));
+
+    // --- Geo helpers ---
+    const R = 6371000; // Earth radius (m)
+    const toRad = d => d * Math.PI / 180;
+    const toDeg = r => r * 180 / Math.PI;
+
+    // Destination point given start, bearing (deg), distance (m)
+    function destinationPoint(lat, lon, bearingDeg, dist) {
+      const δ = dist / R;
+      const θ = toRad(bearingDeg);
+      const φ1 = toRad(lat);
+      const λ1 = toRad(lon);
+
+      const φ2 = Math.asin(Math.sin(φ1)*Math.cos(δ) + Math.cos(φ1)*mathSinClamped(δ)*Math.cos(θ));
+      const λ2 = λ1 + Math.atan2(Math.sin(θ)*mathSinClamped(δ)*Math.cos(φ1), Math.cos(δ) - Math.sin(φ1)*Math.sin(φ2));
+      return [toDeg(φ2), (toDeg(λ2)+540)%360-180];
+    }
+    function mathSinClamped(x){ // protects against rare NaN at very small deltas
+      const s = Math.sin(x); return Number.isFinite(s) ? s : 0;
+    }
+
+    // --- Arrow drawing using heading ---
+    function updateDirectionArrowFromHeading(lat, lon, headingDeg) {
+      // remove old arrow
+      if (directionLayer) { map.removeLayer(directionLayer); directionLayer = null; }
+      if (typeof headingDeg !== 'number' || !isFinite(headingDeg)) return;
+
+      // arrow geometry (meters)
+      const shaftLen = 25;
+      const headLen  = 8;
+      const headHalf = 5;
+
+      const tip      = destinationPoint(lat, lon, headingDeg, shaftLen + headLen);
+      const shaftEnd = destinationPoint(lat, lon, headingDeg, shaftLen);
+      const leftBase  = destinationPoint(shaftEnd[0], shaftEnd[1], (headingDeg + 270) % 360, headHalf);
+      const rightBase = destinationPoint(shaftEnd[0], shaftEnd[1], (headingDeg + 90) % 360, headHalf);
+
+      const shaft = L.polyline([[lat, lon], shaftEnd], { weight: 4, color: 'red', opacity: 0.9 });
+      const head  = L.polygon([leftBase, tip, rightBase], { color: 'red', fillColor: 'red', fillOpacity: 0.8, weight: 1 });
+      directionLayer = L.layerGroup([shaft, head]).addTo(map);
+    }
+
+    // --- Geolocation ---
+    function updatePosition(position) {
+      currentLat = position.coords.latitude;
+      currentLon = position.coords.longitude;
+
+      if (currentLocationMarker) {
+        currentLocationMarker.setLatLng([currentLat, currentLon]);
+      } else {
+        currentLocationMarker = L.circleMarker([currentLat, currentLon], {
+          radius: 10, color: 'red', fillColor: '#f03', fillOpacity: 0.5
+        }).addTo(map);
+      }
+      if (mapIsCentered) map.setView([currentLat, currentLon], map.getZoom());
+
+      // If we have a heading already, update the arrow right away
+      if (compassActive && typeof lastHeadingDeg === 'number') {
+        updateDirectionArrowFromHeading(currentLat, currentLon, lastHeadingDeg);
+      }
+
+      prevLat = currentLat; prevLon = currentLon;
+    }
+
+    function showError(error) {
+      switch (error.code) {
+        case error.PERMISSION_DENIED: alert("位置情報の利用が拒否されました。"); break;
+        case error.POSITION_UNAVAILABLE: alert("位置情報を取得できません。"); break;
+        case error.TIMEOUT: alert("位置情報の取得がタイムアウトしました。"); break;
+        default: alert("不明なエラーが発生しました。"); break;
+      }
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(updatePosition, showError, {
+        enableHighAccuracy: true, maximumAge: 0, timeout: 5000
+      });
+    } else {
+      alert("このブラウザは位置情報に対応していません。");
+    }
+
+    // --- Centering toggle ---
+    document.getElementById("centerButton").addEventListener("click", () => {
+      mapIsCentered = !mapIsCentered;
+      const btn = document.getElementById("centerButton");
+      if (mapIsCentered) {
+        btn.textContent = "現在地を地図中心に表示中";
+        if (currentLat !== undefined && currentLon !== undefined) {
+          map.setView([currentLat, currentLon], map.getZoom());
+        }
+      } else {
+        btn.textContent = "現在地は自由に動かせます";
+      }
+    });
+
+    // --- Compass / heading ---
+    const headingBadge = document.getElementById('headingBadge');
+    function setHeadingBadge(deg) {
+      headingBadge.textContent = Number.isFinite(deg) ? `Heading: ${Math.round(deg)}°` : "Heading: --°";
+    }
+
+    // Simple low-pass filter to stabilize jittery sensors
+    function smoothHeading(newDeg) {
+      const alpha = 0.25; // smaller = smoother
+      if (headingSmoothing == null) headingSmoothing = newDeg;
+      // choose shortest angular distance
+      let diff = ((newDeg - headingSmoothing + 540) % 360) - 180;
+      headingSmoothing = (headingSmoothing + alpha * diff + 360) % 360;
+      return headingSmoothing;
+    }
+
+    function handleOrientationEvent(event) {
+      let headingDeg;
+
+      // iOS Safari: webkitCompassHeading (0 = North, CW)
+      if (typeof event.webkitCompassHeading === 'number' && isFinite(event.webkitCompassHeading)) {
+        headingDeg = event.webkitCompassHeading;
+      }
+      // Generic absolute orientation: alpha is degrees clockwise from device's initial frame to Earth frame
+      else if (event.absolute === true && typeof event.alpha === 'number' && isFinite(event.alpha)) {
+        // Convert α to compass: 0° = North, CW. On many devices, compass ≈ (360 - alpha)
+        // Note: Screen rotation can affect this; for basic use this works well enough.
+        headingDeg = (360 - event.alpha) % 360;
+
+        // Optional: correct by screen orientation angle if available
+        const screenAngle = (screen.orientation && typeof screen.orientation.angle === 'number')
+          ? screen.orientation.angle : (window.orientation || 0);
+        headingDeg = (headingDeg + screenAngle + 360) % 360;
+      }
+
+      if (typeof headingDeg === 'number') {
+        lastHeadingDeg = smoothHeading(headingDeg);
+        setHeadingBadge(lastHeadingDeg);
+        if (currentLat !== undefined && currentLon !== undefined) {
+          updateDirectionArrowFromHeading(currentLat, currentLon, lastHeadingDeg);
+        }
+      }
+    }
+
+    async function startCompass() {
+      try {
+        // iOS 13+ requires a user gesture + permission
+        if (typeof DeviceOrientationEvent !== 'undefined' &&
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const resp = await DeviceOrientationEvent.requestPermission();
+          if (resp !== 'granted') {
+            alert("コンパスのアクセスが許可されませんでした（設定→Safari→モーションと方位を許可）。");
+            return;
+          }
+        }
+        window.addEventListener('deviceorientation', handleOrientationEvent, { capture: false, passive: true });
+        // Some browsers fire deviceorientationabsolute; listen to either
+        window.addEventListener('deviceorientationabsolute', handleOrientationEvent, { capture: false, passive: true });
+        compassActive = true;
+        document.getElementById('compassButton').textContent = "📍 コンパス稼働中";
+      } catch (e) {
+        console.error(e);
+        alert("コンパスを利用できませんでした。ブラウザや端末の設定をご確認ください。");
+      }
+    }
+
+    document.getElementById('compassButton').addEventListener('click', startCompass);
+  </script>
+</body>
+</html>
