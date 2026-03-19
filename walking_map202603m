@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>OSM + Compass Heading Up</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; }
+    #map-container { width: 100vw; height: 100vh; background: #eee; }
+    #map { width: 100%; height: 100%; transition: transform 0.1s linear; }
+    
+    .controls {
+      position: absolute; bottom: 30px; left: 10px; right: 10px;
+      display: flex; flex-direction: column; gap: 8px; z-index: 1000;
+    }
+    .row { display: flex; gap: 8px; }
+    
+    .btn {
+      flex: 1; background: white; border: none; padding: 15px 10px;
+      font-size: 14px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2); border-radius: 8px;
+    }
+
+    #headingBadge {
+      position: absolute; top: 10px; right: 10px; z-index: 1000;
+      background: rgba(0, 0, 0, 0.7); color: white; padding: 8px 15px;
+      border-radius: 20px; font-family: monospace; font-size: 16px;
+    }
+
+    .active-btn { background: #007bff; color: white; }
+    
+    /* Keeps markers upright when map rotates */
+    .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-popup {
+      transition: transform 0.1s linear;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="headingBadge">North: 0°</div>
+  
+  <div id="map-container">
+    <div id="map"></div>
+  </div>
+
+  <div class="controls">
+    <div class="row">
+      <button id="modeButton" class="btn">🧭 North Up</button>
+      <button id="centerButton" class="btn active-btn">🎯 中心固定</button>
+    </div>
+    <button id="compassButton" class="btn">📍 コンパス有効化</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    let state = {
+      lat: null, lon: null,
+      mapIsCentered: true,
+      compassActive: false,
+      headingUpMode: false, // false = North Up, true = Heading Up
+      currentHeading: 0,
+      smoothingAlpha: 0.15
+    };
+
+    const mapEl = document.getElementById('map');
+    const map = L.map('map', { zoomControl: false, attributionControl: false })
+                 .setView([35.6700, 139.7024], 17);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let userMarker = L.circleMarker([0, 0], {
+      radius: 9, color: '#fff', weight: 3, fillColor: '#007bff', fillOpacity: 1
+    }).addTo(map);
+
+    // --- Heading & Rotation Logic ---
+    function updateOrientation(heading) {
+      state.currentHeading = heading;
+      document.getElementById('headingBadge').textContent = `${Math.round(heading)}°`;
+
+      if (state.headingUpMode) {
+        // Rotate the entire map div
+        mapEl.style.transform = `rotate(${-heading}deg)`;
+        
+        // Reverse rotate markers so they stay upright
+        const markers = document.querySelectorAll('.leaflet-marker-icon, .leaflet-popup');
+        markers.forEach(m => {
+           // We extract the original Leaflet translation and add our counter-rotation
+           const currentTransform = m.style.transform.replace(/rotate\(.*?\)/, '');
+           m.style.transform = `${currentTransform} rotate(${heading}deg)`;
+        });
+      } else {
+        mapEl.style.transform = `rotate(0deg)`;
+      }
+    }
+
+    function handleOrientation(event) {
+      let h = event.webkitCompassHeading || (360 - event.alpha);
+      if (h) {
+        // Simple smoothing
+        let diff = ((h - state.currentHeading + 540) % 360) - 180;
+        let newHeading = (state.currentHeading + state.smoothingAlpha * diff + 360) % 360;
+        updateOrientation(newHeading);
+      }
+    }
+
+    // --- Geolocation ---
+    navigator.geolocation.watchPosition(pos => {
+      state.lat = pos.coords.latitude;
+      state.lon = pos.coords.longitude;
+      userMarker.setLatLng([state.lat, state.lon]);
+      if (state.mapIsCentered) map.panTo([state.lat, state.lon]);
+    }, null, { enableHighAccuracy: true });
+
+    // --- UI Controls ---
+    document.getElementById('modeButton').addEventListener('click', (e) => {
+      state.headingUpMode = !state.headingUpMode;
+      e.target.textContent = state.headingUpMode ? "🏃 Heading Up" : "🧭 North Up";
+      e.target.classList.toggle('active-btn', state.headingUpMode);
+      if (!state.headingUpMode) updateOrientation(0); 
+    });
+
+    document.getElementById('centerButton').addEventListener('click', (e) => {
+      state.mapIsCentered = !state.mapIsCentered;
+      e.target.classList.toggle('active-btn', state.mapIsCentered);
+    });
+
+    document.getElementById('compassButton').addEventListener('click', async (e) => {
+      try {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+          await DeviceOrientationEvent.requestPermission();
+        }
+        window.addEventListener('deviceorientation', handleOrientation);
+        e.target.style.display = 'none'; // Hide button once active
+        state.compassActive = true;
+      } catch (err) {
+        alert("Compass not supported");
+      }
+    });
+  </script>
+</body>
+</html>
